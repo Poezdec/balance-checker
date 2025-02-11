@@ -21,8 +21,8 @@ CONFIG = {
         "polygon": "YOUR_POLYGONSCAN_API_KEY"
     },
     "prices": {
-        "eth": 2600,
-        "pol": 0.3
+        "eth": 3000.0,
+        "pol": 1.5
     }
 }
 
@@ -53,34 +53,26 @@ def main():
     addresses = Path(ADDRESS_FILE).read_text().splitlines()
     
     results = []
+    max_columns = ["Address"]
+    for network in CONFIG["enabled_networks"]:
+        if CONFIG["enabled_networks"][network]:
+            if network == "polygon":
+                max_columns.extend(["Polygon POL", "Polygon $"])
+            else:
+                max_columns.extend([f"{network.capitalize()} ETH", f"{network.capitalize()} $"])
+    
     for i, address in enumerate(addresses):
         if address.strip():
             print(f"Проверяем {address}...")
             row = [address]
             
-            if CONFIG["enabled_networks"].get("base", False):
-                base_balance = get_balance(address, "base", CONFIG["api_keys"]["base"])
-                row.extend([base_balance, base_balance * CONFIG["prices"]["eth"]])
-            else:
-                row.extend([None, None])
-            
-            if CONFIG["enabled_networks"].get("optimism", False):
-                optimism_balance = get_balance(address, "optimism", CONFIG["api_keys"]["optimism"])
-                row.extend([optimism_balance, optimism_balance * CONFIG["prices"]["eth"]])
-            else:
-                row.extend([None, None])
-            
-            if CONFIG["enabled_networks"].get("arbitrum", False):
-                arbitrum_balance = get_balance(address, "arbitrum", CONFIG["api_keys"]["arbitrum"])
-                row.extend([arbitrum_balance, arbitrum_balance * CONFIG["prices"]["eth"]])
-            else:
-                row.extend([None, None])
-            
-            if CONFIG["enabled_networks"].get("polygon", False):
-                polygon_balance = get_balance(address, "polygon", CONFIG["api_keys"]["polygon"])
-                row.extend([polygon_balance, polygon_balance * CONFIG["prices"]["pol"]])
-            else:
-                row.extend([None, None])
+            for network in CONFIG["enabled_networks"]:
+                if CONFIG["enabled_networks"][network]:
+                    balance = get_balance(address, network, CONFIG["api_keys"][network])
+                    price = CONFIG["prices"]["pol"] if network == "polygon" else CONFIG["prices"]["eth"]
+                    row.extend([balance, balance * price])
+                else:
+                    row.extend([None, None])
             
             results.append(row)
             
@@ -88,17 +80,7 @@ def main():
                 print("Делаем паузу 1 сек... (лимит 3 запроса в секунду)")
                 time.sleep(1)
     
-    columns = ["Address"]
-    if CONFIG["enabled_networks"].get("base", False):
-        columns.extend(["Base ETH", "Base $"])
-    if CONFIG["enabled_networks"].get("optimism", False):
-        columns.extend(["Optimism ETH", "Optimism $"])
-    if CONFIG["enabled_networks"].get("arbitrum", False):
-        columns.extend(["Arbitrum ETH", "Arbitrum $"])
-    if CONFIG["enabled_networks"].get("polygon", False):
-        columns.extend(["Polygon POL", "Polygon $"])
-    
-    df = pd.DataFrame(results, columns=columns)
+    df = pd.DataFrame(results, columns=max_columns)
     df.to_csv("balances.csv", index=False)
     print("Результаты сохранены в balances.csv")
     print("\nТаблица результатов:\n")
