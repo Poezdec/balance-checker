@@ -16,4 +16,4 @@ polygon - https://polygonscan.com/
 My Profile > Others > API Keys > Add
 
 
-! In the settings you can turn off blockchains where you don't need to check your balance.
+!!! In the settings you can turn off blockchains where you don't need to check your balance.
