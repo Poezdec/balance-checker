@@ -21,8 +21,8 @@ CONFIG = {
         "polygon": "YOUR_POLYGONSCAN_API_KEY"
     },
     "prices": {
-        "eth": 3000.0,
-        "pol": 1.5
+        "eth": 2600,
+        "pol": 0.3
     }
 }
 
