@@ -21,8 +21,8 @@ CONFIG = {
         "polygon": "YOUR_POLYGONSCAN_API_KEY"
     },
     "prices": {
-        "eth": 2600,
-        "pol": 0.3
+        "eth": 3000.0,
+        "pol": 1.5
     }
 }
 
@@ -52,27 +52,30 @@ def get_balance(address, network, api_key):
 def main():
     addresses = Path(ADDRESS_FILE).read_text().splitlines()
     
+    # Проверка, включена ли хотя бы одна сеть
+    active_networks = [net for net in CONFIG["enabled_networks"] if CONFIG["enabled_networks"][net]]
+    if not active_networks:
+        print("Ошибка: Не выбрано ни одной сети для проверки. Включите хотя бы одну в CONFIG.")
+        return
+    
     results = []
     max_columns = ["Address"]
-    for network in CONFIG["enabled_networks"]:
-        if CONFIG["enabled_networks"][network]:
-            if network == "polygon":
-                max_columns.extend(["Polygon POL", "Polygon $"])
-            else:
-                max_columns.extend([f"{network.capitalize()} ETH", f"{network.capitalize()} $"])
+    
+    for network in active_networks:
+        if network == "polygon":
+            max_columns.extend(["Polygon POL", "Polygon $"])
+        else:
+            max_columns.extend([f"{network.capitalize()} ETH", f"{network.capitalize()} $"])
     
     for i, address in enumerate(addresses):
         if address.strip():
             print(f"Проверяем {address}...")
             row = [address]
             
-            for network in CONFIG["enabled_networks"]:
-                if CONFIG["enabled_networks"][network]:
-                    balance = get_balance(address, network, CONFIG["api_keys"][network])
-                    price = CONFIG["prices"]["pol"] if network == "polygon" else CONFIG["prices"]["eth"]
-                    row.extend([balance, balance * price])
-                else:
-                    row.extend([None, None])
+            for network in active_networks:
+                balance = get_balance(address, network, CONFIG["api_keys"][network])
+                price = CONFIG["prices"]["pol"] if network == "polygon" else CONFIG["prices"]["eth"]
+                row.extend([balance, balance * price])
             
             results.append(row)
             
